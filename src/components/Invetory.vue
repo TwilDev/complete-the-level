@@ -19,7 +19,7 @@ export default {
       canvas: null,
       ctx: null,
       canvasWidth: 300,
-      canvasHeight: 50
+      canvasHeight: 25
     }
   },
   methods: {
@@ -46,6 +46,7 @@ export default {
   flex: 1 1 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .inventory--no-item {

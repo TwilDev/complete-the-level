@@ -1,12 +1,14 @@
 <template>
   <div class="game">
+    <span class="go-back" @click="$emit('return')">Back to menu</span>
     <div class="game-wrapper">
-      <h2>Level: {{ currentLevel }}</h2>
+      <div>
+        <h2>Level: {{ currentLevel }}</h2>
+      </div>
       <Invetory :item=player.invetory />
       <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" style="background: linear-gradient(#80BCA3, #B6D8C0)"></canvas>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -17,6 +19,7 @@ export default {
   components: { Invetory },
   data () {
     return {
+      loopRquest: null,
       canvas: null,
       ctx: null,
       canvasWidth: 800,
@@ -64,8 +67,7 @@ export default {
           level: 3,
           platforms: [
             { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
-            { x: 350, y: 150, width: 15, height: 800, color: '#655643' },
-            { x: 50, y: 0, width: 15, height: 800, color: '#655643' },
+            { x: 350, y: 150, width: 35, height: 800, color: '#655643' },
             { x: 150, y: 350, width: 110, height: 20, color: '#655643' },
             { x: 680, y: 250, width: 90, height: 20, color: '#655643' }
           ],
@@ -83,7 +85,7 @@ export default {
             { x: 450, y: 220, width: 250, height: 15, color: '#655643' },
             { x: 0, y: 420, width: 110, height: 20, color: '#655643' },
             { x: 750, y: 250, width: 90, height: 15, color: '#655643' },
-            { x: 150, y: 290, width: 90, height: 20, color: '#655643' }
+            { x: 150, y: 310, width: 90, height: 20, color: '#655643' }
           ],
           goal: { x: 500, y: 140, width: 50, height: 50, color: '#2880bf' },
           items: [
@@ -118,7 +120,7 @@ export default {
     gameLoop () {
       this.update()
       this.render()
-      requestAnimationFrame(this.gameLoop)
+      this.loopRquest = requestAnimationFrame(this.gameLoop)
     },
     update () {
       // Update player position
@@ -173,13 +175,15 @@ export default {
     platformCollision (platform, xCollide, yCollide) {
       if (xCollide && yCollide) {
         // Check Collision for each side
-        const isTopCollide = this.player.yVelocity > 0 && this.player.y + this.player.height <= platform.y + platform.height / 2
+        // const isTopCollide = this.player.yVelocity > 0 && this.player.y + this.player.height <= platform.y + platform.height / 2
+        const isTopCollide = this.player.yVelocity > 0 &&
+        this.player.y + this.player.height <= platform.y + platform.height / 2 &&
+        ((this.player.x + this.player.width > platform.x && this.player.x < platform.x + platform.width) ||
+        (this.player.x < platform.x && this.player.x + this.player.width > platform.x))
         const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 &&
          this.player.y + this.player.height > platform.y &&
          this.player.y < platform.y + platform.height &&
          this.player.y + this.player.height <= platform.y + platform.height
-        // const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
-        // const isRightCollide = this.player.xVelocity < 0 && this.player.x + this.player.width >= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
         const isRightCollide = this.player.xVelocity < 0 &&
          this.player.x + this.player.width >= platform.x + platform.width / 2 &&
          this.player.y + this.player.height > platform.y &&
@@ -188,14 +192,21 @@ export default {
         const isBottomCollide = this.player.yVelocity < 0 && this.player.y >= platform.y + platform.height / 2
 
         if (isTopCollide) {
+          console.log('did collide top')
           this.player.y = platform.y - this.player.height
           this.player.jumping = false
           this.player.yVelocity = 0
         } else if (isLeftCollide) {
+          console.log('did collide left')
+          console.log(this.player.xVelocity)
+          this.player.xVelocity = 0
           this.player.x = platform.x - this.player.width
         } else if (isRightCollide) {
+          console.log('did collide right')
+          this.player.xVelocity = 0
           this.player.x = platform.x + platform.width
         } else if (isBottomCollide) {
+          console.log('did collide bottom')
           this.player.y = platform.y + platform.height
           this.player.yVelocity = 0
         } else {
@@ -213,7 +224,6 @@ export default {
       return isColliding
     },
     itemPickup (item) {
-      // console.log('got into here with id of ' + id)
       const filteredArray = [...this.currentLevelItems.filter((obj) => {
         return obj.id !== item.id
       })]
@@ -230,6 +240,9 @@ export default {
       this.playerClickY = null
       this.player.invetory = {}
       this.currentLevel++
+      if (this.currentLevel > 4) {
+        this.$emit('complete')
+      }
     },
     render () {
       // Clear canvas
@@ -312,11 +325,26 @@ export default {
     })
 
     this.gameLoop()
+  },
+  destroyed () {
+    cancelAnimationFrame(this.loopRquest)
   }
 }
 </script>
 
 <style>
+.game {
+  position: relative;
+  color: white;
+ }
+ .go-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2rem;
+  cursor: pointer;
+  font-weight: 600;
+ }
 .game-wrapper {
   display: flex;
   flex-wrap: wrap;
