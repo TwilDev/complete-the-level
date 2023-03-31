@@ -135,9 +135,17 @@ export default {
       if (xCollide && yCollide) {
         // Check Collision for each side
         const isTopCollide = this.player.yVelocity > 0 && this.player.y + this.player.height <= platform.y + platform.height / 2
-        const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
-        const isRightCollide = this.player.xVelocity < 0 && this.player.x + this.player.width >= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
-        //  const isRightCollide = this.player.x < platform.x + platform.width / 2 && this.player.x + this.player.width > platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y + platform.height
+        const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 &&
+         this.player.y + this.player.height > platform.y &&
+         this.player.y < platform.y + platform.height &&
+         this.player.y + this.player.height <= platform.y + platform.height
+        // const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
+        // const isRightCollide = this.player.xVelocity < 0 && this.player.x + this.player.width >= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
+        const isRightCollide = this.player.xVelocity < 0 &&
+         this.player.x + this.player.width >= platform.x + platform.width / 2 &&
+         this.player.y + this.player.height > platform.y &&
+         this.player.y < platform.y + platform.height &&
+         this.player.y + this.player.height <= platform.y + platform.height
         const isBottomCollide = this.player.yVelocity < 0 && this.player.y >= platform.y + platform.height / 2
 
         if (isTopCollide) {
