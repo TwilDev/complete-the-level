@@ -1,7 +1,7 @@
 <template>
   <div>
     <Invetory :items=player.invetory />
-    <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+    <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" style="background: linear-gradient(#80BCA3, #B6D8C0)"></canvas>
   </div>
 </template>
 
@@ -87,12 +87,13 @@ export default {
       this.player.y += this.player.yVelocity
 
       // Move player left/right
-      if (this.keys['KeyA'] || this.keys['ArrowLeft']) {
-        this.player.x -= this.player.speed
-      }
-      if (this.keys['KeyD'] || this.keys['ArrowRight']) {
-        this.player.x += this.player.speed
-      }
+      // if (this.keys['KeyA'] || this.keys['ArrowLeft']) {
+      //   this.player.x -= this.player.speed
+      // }
+      // if (this.keys['KeyD'] || this.keys['ArrowRight']) {
+      //   this.player.x += this.player.speed
+      // }
+      this.player.x += this.player.xVelocity
 
       // Check collision for placed platforms
       const xCollide = this.player.x + this.player.width > this.itemPlaced.x && this.player.x < this.itemPlaced.x + this.itemPlaced.width
@@ -118,11 +119,9 @@ export default {
     },
     platformCollision (platform, xCollide, yCollide) {
       if (xCollide && yCollide) {
-      // Check Collision for each side
+        // Check Collision for each side
         const isTopCollide = this.player.yVelocity > 0 && this.player.y + this.player.height <= platform.y + platform.height / 2
-        // const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2
         const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
-        // const isRightCollide = this.player.x + this.player.width >= platform.x - platform.width / 2
         const isRightCollide = this.player.x < platform.x + platform.width / 2 && this.player.x + this.player.width > platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y + platform.height
         const isBottomCollide = this.player.yVelocity < 0 && this.player.y >= platform.y + platform.height / 2
 
@@ -177,7 +176,7 @@ export default {
       }
 
       // Draw Goals
-      this.ctx.fillStyle = 'blue'
+      this.ctx.fillStyle = 'green'
       this.ctx.fillRect(this.currentLevelGoal.x, this.currentLevelGoal.y, this.currentLevelGoal.width, this.currentLevelGoal.height)
 
       // Draw pickups
@@ -190,14 +189,15 @@ export default {
       // Draw player
       this.ctx.fillStyle = '#E6AC27'
       this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height)
+      // this.player.x += this.player.xVelocity
 
       // Draw placed items
       if (this.drawElement && this.player.invetory.length > 0) {
         const item = this.player.invetory[0]
 
-        // Get coordinates of player click
-        const x = this.playerClickX - this.canvas.offsetLeft
-        const y = this.playerClickY - this.canvas.offsetTop
+        // Get coordinates of player click / by 2 to place in the middle of mouse clicka
+        const x = (this.playerClickX - this.canvas.offsetLeft) - (item.width / 2)
+        const y = (this.playerClickY - this.canvas.offsetTop) - (item.height / 2)
 
         this.ctx.fillStyle = '#36261e'
         this.ctx.fillRect(x, y, item.width, item.height)
@@ -214,15 +214,16 @@ export default {
 
     // Handle keyboard input
     window.addEventListener('keydown', event => {
-      this.keys[event.code] = true
+      //  this.keys[event.code] = true
       if (event.code === 'Space' && !this.player.jumping) {
+        console.log('jump!')
         this.player.jumping = true
         this.player.yVelocity = -20
       }
-      if (event.code === 'd') {
+      if (event.code === 'KeyD' || event.code === 'ArrowLeft') {
         this.player.xVelocity = +3
       }
-      if (event.code === 'a') {
+      if (event.code === 'KeyA' || event.code === 'ArrowRight') {
         this.player.xVelocity = -3
       }
     })
@@ -238,7 +239,14 @@ export default {
     })
 
     window.addEventListener('keyup', event => {
-      this.keys[event.code] = false
+      if (event.code === 'KeyD' || event.code === 'ArrowLeft') {
+        console.log('D up')
+        this.player.xVelocity = 0
+      }
+      if (event.code === 'KeyA' || event.code === 'ArrowRight') {
+        console.log('A up')
+        this.player.xVelocity = 0
+      }
     })
 
     this.gameLoop()
