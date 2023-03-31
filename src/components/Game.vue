@@ -1,8 +1,12 @@
 <template>
-  <div>
-    <Invetory :items=player.invetory />
-    <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" style="background: linear-gradient(#80BCA3, #B6D8C0)"></canvas>
+  <div class="game">
+    <div class="game-wrapper">
+      <Invetory :item=player.invetory />
+      <h2>Level: {{ currentLevel }}</h2>
+      <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" style="background: linear-gradient(#80BCA3, #B6D8C0)"></canvas>
+    </div>
   </div>
+
 </template>
 
 <script>
@@ -10,13 +14,16 @@ import Invetory from './Invetory.vue'
 
 export default {
   name: 'game',
+  components: { Invetory },
   data () {
     return {
       canvas: null,
       ctx: null,
       canvasWidth: 800,
       canvasHeight: 600,
-      player: { x: 400, y: 550, width: 30, height: 30, jumping: false, yVelocity: 0, xVelocity: 0, speed: 3, friction: 0.8, invetory: [] },
+      defaultSpawnx: 100,
+      defaultSpawnY: 500,
+      player: { x: 100, y: 500, width: 30, height: 30, jumping: false, yVelocity: 0, xVelocity: 0, speed: 4, friction: 0.8, invetory: {} },
       currentLevel: 1,
       drawElement: false,
       itemPlaced: {},
@@ -29,40 +36,49 @@ export default {
             { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
             { x: 300, y: 520, width: 200, height: 100, color: '#655643' },
             { x: 500, y: 450, width: 100, height: 100, color: '#655643' },
-            { x: 400, y: 400, width: 100, height: 20, color: '#655643' }
+            { x: 360, y: 350, width: 100, height: 20, color: '#655643' }
           ],
-          goal: { x: 700, y: 200, width: 50, height: 50 },
+          goal: { x: 700, y: 200, width: 50, height: 50, color: '#2880bf' },
+          start: { x: 400, y: 550 },
           items: [
-            { x: 500, y: 250, width: 40, height: 25, id: 1 }
+            { x: 370, y: 250, width: 80, height: 15, id: 1 }
           ]
         },
         {
           level: 2,
           platforms: [
-            { x: 0, y: 550, width: 800, height: 50 },
-            { x: 0, y: 50, width: 200, height: 250 },
-            { x: 500, y: 450, width: 100, height: 25 },
-            { x: 100, y: 150, width: 100, height: 25 }
+            { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
+            { x: 0, y: 90, width: 200, height: 15, color: '#655643' },
+            { x: 500, y: 450, width: 100, height: 25, color: '#655643' },
+            { x: 300, y: 350, width: 100, height: 25, color: '#655643' },
+            { x: 100, y: 190, width: 100, height: 25, color: '#655643' },
+            { x: 600, y: 150, width: 200, height: 20, color: '#655643' }
           ],
-          goal: { x: 700, y: 200, width: 50, height: 50 },
+          goal: { x: 0, y: 40, width: 50, height: 50, color: '#2880bf' },
           items: [
-            { x: 500, y: 350, width: 40, height: 25 },
-            { x: 100, y: 250, width: 75, height: 25 }
+            { x: 100, y: 450, width: 100, height: 15, id: 1 }
+          ]
+        },
+        {
+          level: 3,
+          platforms: [
+            { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
+            { x: 300, y: 0, width: 15, height: 800, color: '#655643' },
+            { x: 50, y: 0, width: 15, height: 800, color: '#655643' }
+          ],
+          goal: { x: 50, y: 130, width: 50, height: 50, color: '#2880bf' },
+          items: [
+            { x: 100, y: 450, width: 100, height: 15, id: 1 }
           ]
         }
       ],
       keys: {}
     }
   },
-  components: { Invetory },
   computed: {
     currentLevelData () {
       return this.levels.find(obj => obj.level === this.currentLevel)
     },
-    // currentLevel
-    // currentLevelCollidables () {
-    //   return this.currentLevelData.platfroms.concat(this.currentLevelData.platfroms, this.currentLevelData.items)
-    // },
     currentLevelPlatforms () {
       return this.currentLevelData.platforms
     },
@@ -71,6 +87,12 @@ export default {
     },
     currentLevelItems () {
       return this.currentLevelData.items
+    },
+    usableItems () {
+      return this.player.invetory
+    },
+    currentLevelSpawn () {
+      return this.currentLevelData().start
     }
   },
   methods: {
@@ -85,14 +107,6 @@ export default {
       // Set initial gravity
       this.player.yVelocity += 1.5
       this.player.y += this.player.yVelocity
-
-      // Move player left/right
-      // if (this.keys['KeyA'] || this.keys['ArrowLeft']) {
-      //   this.player.x -= this.player.speed
-      // }
-      // if (this.keys['KeyD'] || this.keys['ArrowRight']) {
-      //   this.player.x += this.player.speed
-      // }
       this.player.x += this.player.xVelocity
 
       // Check collision for placed platforms
@@ -109,8 +123,8 @@ export default {
 
       // Check item collision
       this.currentLevelItems.forEach((item) => {
-        if (this.objectCollision(item) && this.currentLevelItems.find(levelItem => levelItem.id === item.id)) {
-          this.itemPickup(item.id)
+        if (this.objectCollision(item)) {
+          this.itemPickup(item)
         }
       })
 
@@ -122,18 +136,23 @@ export default {
         // Check Collision for each side
         const isTopCollide = this.player.yVelocity > 0 && this.player.y + this.player.height <= platform.y + platform.height / 2
         const isLeftCollide = this.player.x + this.player.width <= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
-        const isRightCollide = this.player.x < platform.x + platform.width / 2 && this.player.x + this.player.width > platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y + platform.height
+        const isRightCollide = this.player.xVelocity < 0 && this.player.x + this.player.width >= platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y && this.player.y < platform.y + platform.height
+        //  const isRightCollide = this.player.x < platform.x + platform.width / 2 && this.player.x + this.player.width > platform.x + platform.width / 2 && this.player.y + this.player.height > platform.y + platform.height
         const isBottomCollide = this.player.yVelocity < 0 && this.player.y >= platform.y + platform.height / 2
 
         if (isTopCollide) {
+          console.log('Top collided')
           this.player.y = platform.y - this.player.height
           this.player.jumping = false
           this.player.yVelocity = 0
         } else if (isLeftCollide) {
+          console.log('Left collided')
           this.player.x = platform.x - this.player.width
         } else if (isRightCollide) {
+          console.log('Right collided')
           this.player.x = platform.x + platform.width
         } else if (isBottomCollide) {
+          console.log('Bottom collided')
           this.player.y = platform.y + platform.height
           this.player.yVelocity = 0
         } else {
@@ -150,18 +169,24 @@ export default {
       xCollide && yCollide ? isColliding = true : isColliding = false
       return isColliding
     },
-    itemPickup (id) {
-      // Remove from level & add to player invetory
-      console.log('tis true in this function' + id)
-      const getItem = this.currentLevelItems.find(item => item.id === id)
-      let removeIndex = this.currentLevelItems.map(item => item.id === id)
-      ~removeIndex && this.currentLevelItems.splice(removeIndex, 1)
-      this.player.invetory.push(getItem)
+    itemPickup (item) {
+      // console.log('got into here with id of ' + id)
+      const filteredArray = [...this.currentLevelItems.filter((obj) => {
+        return obj.id !== item.id
+      })]
+      this.levels.find(obj => obj.level === this.currentLevel).items = filteredArray
+      console.log(item)
+      this.player.invetory = {...item}
     },
     levelComplete () {
       this.player.yVelocity = 0
-      this.player.x = 0
+      this.player.x = this.defaultSpawnx
+      this.player.y = this.defaultSpawnY
       alert('congrats you win')
+      this.player.xVelocity = 0
+      this.playerClickX = null
+      this.playerClickY = null
+      this.player.invetory = {}
       this.currentLevel++
     },
     render () {
@@ -176,7 +201,7 @@ export default {
       }
 
       // Draw Goals
-      this.ctx.fillStyle = 'green'
+      this.ctx.fillStyle = this.currentLevelGoal.color
       this.ctx.fillRect(this.currentLevelGoal.x, this.currentLevelGoal.y, this.currentLevelGoal.width, this.currentLevelGoal.height)
 
       // Draw pickups
@@ -189,11 +214,10 @@ export default {
       // Draw player
       this.ctx.fillStyle = '#E6AC27'
       this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height)
-      // this.player.x += this.player.xVelocity
 
       // Draw placed items
-      if (this.drawElement && this.player.invetory.length > 0) {
-        const item = this.player.invetory[0]
+      if (this.drawElement && Object.keys(this.player.invetory).length !== 0) {
+        const item = this.player.invetory
 
         // Get coordinates of player click / by 2 to place in the middle of mouse clicka
         const x = (this.playerClickX - this.canvas.offsetLeft) - (item.width / 2)
@@ -221,17 +245,15 @@ export default {
         this.player.yVelocity = -20
       }
       if (event.code === 'KeyD' || event.code === 'ArrowLeft') {
-        this.player.xVelocity = +3
+        this.player.xVelocity = +this.player.speed
       }
       if (event.code === 'KeyA' || event.code === 'ArrowRight') {
-        this.player.xVelocity = -3
+        this.player.xVelocity = -this.player.speed
       }
     })
 
     this.canvas.addEventListener('click', event => {
-      console.log('here')
-      if (this.player.invetory.length !== 0) {
-        console.log('into here')
+      if (Object.keys(this.player.invetory).length !== 0) {
         this.drawElement = true
         this.playerClickX = event.clientX
         this.playerClickY = event.clientY
@@ -240,11 +262,9 @@ export default {
 
     window.addEventListener('keyup', event => {
       if (event.code === 'KeyD' || event.code === 'ArrowLeft') {
-        console.log('D up')
         this.player.xVelocity = 0
       }
       if (event.code === 'KeyA' || event.code === 'ArrowRight') {
-        console.log('A up')
         this.player.xVelocity = 0
       }
     })
@@ -253,3 +273,12 @@ export default {
   }
 }
 </script>
+
+<style>
+.game-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+</style>
