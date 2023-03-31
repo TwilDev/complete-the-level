@@ -1,8 +1,8 @@
 <template>
   <div class="game">
     <div class="game-wrapper">
-      <Invetory :item=player.invetory />
       <h2>Level: {{ currentLevel }}</h2>
+      <Invetory :item=player.invetory />
       <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" style="background: linear-gradient(#80BCA3, #B6D8C0)"></canvas>
     </div>
   </div>
@@ -21,9 +21,9 @@ export default {
       ctx: null,
       canvasWidth: 800,
       canvasHeight: 600,
-      defaultSpawnx: 100,
+      defaultSpawnX: 100,
       defaultSpawnY: 500,
-      player: { x: 100, y: 500, width: 30, height: 30, jumping: false, yVelocity: 0, xVelocity: 0, speed: 4, friction: 0.8, invetory: {} },
+      player: { x: 100, y: 450, width: 30, height: 30, jumping: false, yVelocity: 0, xVelocity: 0, speed: 4, friction: 0.8, invetory: {} },
       currentLevel: 1,
       drawElement: false,
       itemPlaced: {},
@@ -48,27 +48,46 @@ export default {
           level: 2,
           platforms: [
             { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
-            { x: 0, y: 90, width: 200, height: 15, color: '#655643' },
+            { x: 0, y: 90, width: 200, height: 25, color: '#655643' },
             { x: 500, y: 450, width: 100, height: 25, color: '#655643' },
             { x: 300, y: 350, width: 100, height: 25, color: '#655643' },
             { x: 100, y: 190, width: 100, height: 25, color: '#655643' },
+            { x: 120, y: 450, width: 100, height: 25, color: '#655643' },
             { x: 600, y: 150, width: 200, height: 20, color: '#655643' }
           ],
           goal: { x: 0, y: 40, width: 50, height: 50, color: '#2880bf' },
           items: [
-            { x: 100, y: 450, width: 100, height: 15, id: 1 }
+            { x: 120, y: 400, width: 100, height: 15, id: 1 }
           ]
         },
         {
           level: 3,
           platforms: [
             { x: 0, y: 550, width: 800, height: 50, color: '#655643' },
-            { x: 300, y: 0, width: 15, height: 800, color: '#655643' },
-            { x: 50, y: 0, width: 15, height: 800, color: '#655643' }
+            { x: 350, y: 150, width: 15, height: 800, color: '#655643' },
+            { x: 50, y: 0, width: 15, height: 800, color: '#655643' },
+            { x: 150, y: 350, width: 110, height: 20, color: '#655643' },
+            { x: 680, y: 250, width: 90, height: 20, color: '#655643' }
           ],
-          goal: { x: 50, y: 130, width: 50, height: 50, color: '#2880bf' },
+          goal: { x: 700, y: 130, width: 50, height: 50, color: '#2880bf' },
           items: [
-            { x: 100, y: 450, width: 100, height: 15, id: 1 }
+            { x: 100, y: 450, width: 100, height: 15, id: 1 },
+            { x: 410, y: 450, width: 50, height: 15, id: 2 }
+          ]
+        },
+        {
+          level: 4,
+          platforms: [
+            { x: 0, y: 550, width: 400, height: 50, color: '#655643' },
+            { x: 450, y: 0, width: 15, height: 230, color: '#655643' },
+            { x: 450, y: 220, width: 250, height: 15, color: '#655643' },
+            { x: 0, y: 420, width: 110, height: 20, color: '#655643' },
+            { x: 750, y: 250, width: 90, height: 15, color: '#655643' },
+            { x: 150, y: 290, width: 90, height: 20, color: '#655643' }
+          ],
+          goal: { x: 500, y: 140, width: 50, height: 50, color: '#2880bf' },
+          items: [
+            { x: 260, y: 150, width: 50, height: 15, id: 1 }
           ]
         }
       ],
@@ -121,6 +140,26 @@ export default {
         this.platformCollision(platform, xCollide, yCollide)
       }
 
+      // Check if out of bounds
+      if (
+        (this.player.x + this.player.width) < 0 ||
+        (this.player.y + this.player.height) < 0 ||
+        (this.playerx - this.player.width) > this.canvas.width ||
+        (this.player.y - this.player.height) > this.canvas.height
+      ) {
+        console.log(this.player.x)
+        console.log(this.player.y)
+        this.player.yVelocity = 0
+        this.player.xVelocity = 0
+        this.player.x = this.defaultSpawnX
+        this.player.y = this.defaultSpawnY
+        alert('Welp you died')
+        this.player.xVelocity = 0
+        this.playerClickX = null
+        this.playerClickY = null
+        this.currentLevel = this.currentLevel
+      }
+
       // Check item collision
       this.currentLevelItems.forEach((item) => {
         if (this.objectCollision(item)) {
@@ -149,18 +188,14 @@ export default {
         const isBottomCollide = this.player.yVelocity < 0 && this.player.y >= platform.y + platform.height / 2
 
         if (isTopCollide) {
-          console.log('Top collided')
           this.player.y = platform.y - this.player.height
           this.player.jumping = false
           this.player.yVelocity = 0
         } else if (isLeftCollide) {
-          console.log('Left collided')
           this.player.x = platform.x - this.player.width
         } else if (isRightCollide) {
-          console.log('Right collided')
           this.player.x = platform.x + platform.width
         } else if (isBottomCollide) {
-          console.log('Bottom collided')
           this.player.y = platform.y + platform.height
           this.player.yVelocity = 0
         } else {
@@ -183,12 +218,11 @@ export default {
         return obj.id !== item.id
       })]
       this.levels.find(obj => obj.level === this.currentLevel).items = filteredArray
-      console.log(item)
       this.player.invetory = {...item}
     },
     levelComplete () {
       this.player.yVelocity = 0
-      this.player.x = this.defaultSpawnx
+      this.player.x = this.defaultSpawnX
       this.player.y = this.defaultSpawnY
       alert('congrats you win')
       this.player.xVelocity = 0
